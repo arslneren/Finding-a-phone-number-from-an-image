@@ -1,0 +1,31 @@
+# --- Python / ortam ---
+__pycache__/
+*.pyc
+.venv*/
+venv/
+.claude/
+
+# --- Loglar ---
+log_*.txt
+*.log
+
+# --- Veri: hepsi yeniden üretilir (prepare_data.py) veya indirilir ---
+# Sadece kendi veri klasörlerinizin yapısı (README'leri) repoda durur, içerikleri yüklenmez.
+data/*
+!data/custom_backgrounds/
+data/custom_backgrounds/*
+!data/custom_backgrounds/README.md
+!data/custom_negatives/
+data/custom_negatives/*
+!data/custom_negatives/README.md
+
+# --- Eğitilmiş modeller: train.py / train_reader.py ile üretilir ---
+models/*
+!models/README.md
+
+# --- Demo / test görselleri: make_demo_images.py ve test_phone.py üretir ---
+samples/
+
+# --- Kullanıcının eklediği fontlar (lisans nedeniyle yüklenmez) ---
+fonts/*
+!fonts/README.md

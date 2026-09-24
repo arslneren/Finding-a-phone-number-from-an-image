@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Numara Dedektörü</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --text: #1b1f24; --muted: #667085; --line: #e3e6ea;
+    --accent: #2f6fed; --danger: #d92d20; --danger-bg: #fef3f2; --ok: #067647; --ok-bg: #ecfdf3;
+    --warn: #b54708; --warn-bg: #fffaeb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --card: #171a21; --text: #e7e9ee; --muted: #98a2b3; --line: #2a2f3a;
+      --accent: #5b8ff9; --danger: #f97066; --danger-bg: #2b1513; --ok: #47cd89; --ok-bg: #0f2419;
+      --warn: #fdb022; --warn-bg: #2a1f0b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .drop { display: block;border: 2px dashed var(--line); border-radius: 14px; background: var(--card);
+          padding: 36px 16px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
+  .drop:hover, .drop.over { border-color: var(--accent); }
+  .drop strong { color: var(--accent); }
+  .drop small { display: block; color: var(--muted); margin-top: 6px; }
+  input[type=file] { display: none; }
+  .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; margin-top: 24px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .card img { width: 100%; border-radius: 8px; display: block; }
+  .banner { border-radius: 12px; padding: 14px 16px; font-weight: 600; display: flex; gap: 10px; align-items: flex-start; }
+  .banner.danger { background: var(--danger-bg); color: var(--danger); }
+  .banner.warn { background: var(--warn-bg); color: var(--warn); }
+  .banner.ok { background: var(--ok-bg); color: var(--ok); }
+  .banner .ico { font-size: 20px; line-height: 1.2; }
+  .label { color: var(--muted); font-size: 13px; margin: 18px 0 6px; }
+  .bar { height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; border-radius: 99px; transition: width .5s; }
+  .pct { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .number { font: 700 26px/1.3 Consolas, "Cascadia Mono", monospace; letter-spacing: 1px; word-break: break-all; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .chips span { display: inline-block; border: 1px solid var(--line); border-radius: 99px; padding: 2px 10px;
+                margin: 0 6px 6px 0; font: 13px Consolas, monospace; }
+  .spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--accent);
+             border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden { display: none; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Numara Dedektörü</h1>
+  <p class="sub">Görseldeki telefon numaralarını bulur. Unicode varyantları da tanınır: 𝟎𝟓𝟑𝟐 · ０５３２ · ⓪⑤③② · ٠٥٣٢ · O5З2</p>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept="image/*">
+    <div id="dropText"><strong>Görsel seçin</strong> ya da buraya sürükleyin
+      <small>JPG, PNG, WEBP · en fazla 25 MB · panodan yapıştırmak için Ctrl+V</small></div>
+    <div id="busy" class="hidden"><div class="spinner"></div>Görsel taranıyor…</div>
+  </label>
+
+  <div class="grid hidden" id="result">
+    <div class="card">
+      <img id="vis" alt="İşaretli görsel">
+      <div class="legend muted">
+        <span><i style="background:#ffaa00"></i>Numara olası bölgeler</span>
+        <span><i style="background:#e61e1e"></i>Okunan numara</span>
+      </div>
+    </div>
+    <div class="card">
+      <div id="banner" class="banner"></div>
+
+      <div class="label">Numara bulunma olasılığı</div>
+      <div class="pct" id="pct">–</div>
+      <div class="bar"><i id="barFill"></i></div>
+
+      <div id="numBlock">
+        <div class="label">Bulunan numara</div>
+        <div class="number" id="number">–</div>
+        <div class="muted" id="readConf"></div>
+      </div>
+
+      <div id="othersBlock" class="hidden">
+        <div class="label">Diğer okunan rakam dizileri</div>
+        <div class="chips" id="others"></div>
+      </div>
+
+      <div class="label">Detay</div>
+      <div class="muted" id="meta"></div>
+    </div>
+  </div>
+  <div id="error" class="banner danger hidden" style="margin-top:20px"></div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const drop = $("drop"), file = $("file");
+
+["dragenter", "dragover"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", ev => ev.dataTransfer.files[0] && analyze(ev.dataTransfer.files[0]));
+file.addEventListener("change", () => file.files[0] && analyze(file.files[0]));
+document.addEventListener("paste", ev => {
+  const it = [...ev.clipboardData.items].find(i => i.type.startsWith("image/"));
+  if (it) analyze(it.getAsFile());
+});
+
+async function analyze(f) {
+  $("error").classList.add("hidden");
+  $("dropText").classList.add("hidden");
+  $("busy").classList.remove("hidden");
+  try {
+    const r = await fetch("/api/analyze", { method: "POST", body: f });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || r.statusText);
+    render(d);
+  } catch (e) {
+    $("error").textContent = "Hata: " + e.message;
+    $("error").classList.remove("hidden");
+  } finally {
+    $("busy").classList.add("hidden");
+    $("dropText").classList.remove("hidden");
+    file.value = "";
+  }
+}
+
+function render(d) {
+  $("result").classList.remove("hidden");
+  $("vis").src = d.image;
+  const pct = d.score * 100;
+  $("pct").textContent = "%" + pct.toFixed(1);
+  const fill = $("barFill");
+  fill.style.background = d.status === "cep" ? "var(--danger)"
+                        : ["sabit", "okunamadi", "olasi_telefon"].includes(d.status) ? "var(--warn)" : "var(--ok)";
+  requestAnimationFrame(() => fill.style.width = pct.toFixed(1) + "%");
+
+  const b = $("banner");
+  const BANNERS = {
+    cep:           ["danger", "⚠️", "Bu görselde telefon numarası bulunmaktadır."],
+    sabit:         ["warn",   "⚠️", "Bu görselde sabit hat telefon numarası olabilir."],
+    olasi_telefon: ["warn",   "⚠️", "Bu görselde telefon numarası olabilir; numara tam okunamadı, kontrol edin."],
+    okunamadi:     ["warn",   "⚠️", "Görselde rakam var ama okunamadı; telefon numarası olabilir, kontrol edin."],
+    telefon_degil: ["ok",     "ℹ️", "Görselde numara var ama telefon numarası değil (ör. ilan kodu, fiyat, m²)."],
+    yok:           ["ok",     "✓",  "Bu görselde numara bulunmadı."],
+  };
+  const [cls, ico, msg] = BANNERS[d.status] || BANNERS.yok;
+  b.className = "banner " + cls;
+  b.innerHTML = `<span class="ico">${ico}</span><span>${msg}</span>`;
+
+  const TYPE = { cep: "cep telefonu formatına uyuyor", sabit: "sabit hat formatına uyuyor",
+                 olasi_telefon: "telefon uzunluğunda ama formatı tam tutmuyor",
+                 telefon_degil: "telefon formatına uymuyor" };
+  $("numBlock").classList.toggle("hidden", !d.has_number);
+  $("number").textContent = d.number || "okunamadı";
+  $("readConf").textContent = d.read_conf ? "Okuma güveni: %" + (d.read_conf * 100).toFixed(1) +
+      (TYPE[d.status] ? " · " + TYPE[d.status] : "") : "";
+  $("othersBlock").classList.toggle("hidden", !(d.others && d.others.length));
+  $("others").innerHTML = (d.others || []).map(o => `<span>${o}</span>`).join("");
+  $("meta").textContent = `${d.n_regions} şüpheli bölge · ${d.ms} ms`;
+}
+</script>
+</body>
+</html>
