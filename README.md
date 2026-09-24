@@ -1,4 +1,4 @@
-# Unicode Numara Dedektörü
+# Görselde telefon numarası bulma
 
 İlan görsellerinde **telefon numarası olup olmadığını** tespit eden ve bulduğu numarayı **okuyan** iki Keras YSA modeli ile bir web arayüzü.
 Normal rakamların yanında filtre atlatmak için kullanılan Unicode varyantlarını da tanır:
